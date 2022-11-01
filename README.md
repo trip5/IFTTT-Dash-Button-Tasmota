@@ -1,6 +1,5 @@
 # IFTTT Dash Button
-Push a button, do a POST (or GET) Request. Save battery to last ages.
-More documentation on [Instructables](https://www.instructables.com/id/Tiny-ESP8266-Dash-Button-Re-Configurable/).
+Push a button, do a POST (or GET) Request.
 
 ## Features
  - [X] POST/GET Requests
