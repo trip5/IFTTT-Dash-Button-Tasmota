@@ -1,37 +1,27 @@
 # IFTTT Dash Button
-Push a button, do a GET Request. Save battery to last ages.
+Push a button, do a POST (or GET) Request. Save battery to last ages.
 More documentation on [Instructables](https://www.instructables.com/id/Tiny-ESP8266-Dash-Button-Re-Configurable/).
 
-- [ESP-12E Weather Station (in development)](#esp-12e-weather-station-in-development)
-    - [Planned Features (And Progress)](#planned-features-and-progress)
-        - [GET Requests](#get-requests)
-            - [Triggering Actions](#triggering-actions)
-            - [Monitoring Battery (in progress)](#monitoring-battery-in-progress)
-        - [Power Saving](#power-saving)
-        - [OTA / WebUpdate (in progress)](#ota-webupdate-in-progress)
-    - [Useful Links and References](#useful-links-and-references)
-
 ## Features
- - [X] GET Requests
+ - [X] POST/GET Requests
     - [X] Trigger Action
     - [X] Monitor Battery
  - [X] Power Saving
  - [X] Reconfigurable
-
+ 
 ## About
-Inspired by Bitluni's Lab. This is a tiny dashbutton. That connects to IFTTT, and saves battery. The code has been extended to make it easy to use and universally configurable without the need for re-programming. Just flash the `.bin` file from the releases page and the SPIFFS data, enter configuration mode, set it up and you are ready to go.
-![Built Button](https://luigi-pizzolito.github.io/Gangster45671.github.io/IFTTT-Dash-Button/pictures/20180220_163702.jpg)
+Forked from https://github.com/Luigi-Pizzolito/IFTTT-Dash-Button. Power Latch idea originally by Rui Santos at https://randomnerdtutorials.com but I wanted to use an off-the-shelf component, namely the "Flip-Flop Latch Bistable Self-locking Trigger Switch" available on Aliexpress.
 
 ### GET Requests
-When the button is pushed a GET request is made to a webpage.
+When the button is pushed a POST or GET request is made to a webpage.
 #### Triggering Actions
-Depending on the webpage, many different actions can be triggered by the button. I suggest hooking it up to the IFTTT Maker WebHooks.
+Depending on the webpage, many different actions can be triggered by the button. I use mine to toggle a ESPHome/Tasmota switch.
 #### Monitoring Battery
 When a request is made, if the setting is set, the button will also pass on the battery voltage with your web request. This way you can monitor the battery's charge. The server will recieve:
  > yoururl.com/yourrequest/_?VCC_Param.=_**VCC_Voltage**
 
 ### Power Saving
-To keep the button down to a small size, a small battery needs to be used. To maintain a decent battery life, the ESP is almost always in deep-sleep mode. Pressing the button resets the ESP. The ESP reboots, makes a GET request and goes back to deep-sleep.
+To keep the button down to a small size, a small battery needs to be used. Pressing the button activates the latch and allows power. The ESP reboots, makes a POST/GET request and then activates the latch to cut power again.
 
 ### Configuration
 You dont need to take apart your button to re-program the url or action. If you connect `GPIO_03[RX]` to `GND` during startup the button will enter configuration mode. Then you can
@@ -41,7 +31,10 @@ You dont need to take apart your button to re-program the url or action. If you 
 ![Configuration Interface](https://luigi-pizzolito.github.io/Gangster45671.github.io/IFTTT-Dash-Button/pictures/Config.png)
 
 ## Useful Links and References
-- Similliar Projects
+- An off-the-shelf power latch:
+    - [Aliexpress, Tested and works!] https://www.aliexpress.com/item/33054170454.html
+    - [Amazon, Untested] https://www.amazon.com/Bistable-flip-Flop-Circuit-Trigger-Power-Off/dp/B09464R4VV
+- Similiar Projects
     - [Bitluni's DashButton] (https://github.com/bitluni/wifiButton)
 - ESP Info
     - Pinouts
