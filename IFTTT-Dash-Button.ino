@@ -1,3 +1,14 @@
+/*********
+  Forked from https://github.com/Luigi-Pizzolito/IFTTT-Dash-Button
+  All Power Latch stuff commented... and added wherever DeepSleep happens.
+  Also had to change GET to POST for ESPHome/Tasmota stuff (line 265ish)..
+
+  Power Latch idea originally by Rui Santos at https://randomnerdtutorials.com
+  But I wanted to use an off-the-shelf component, namely the
+  "Flip-Flop Latch Bistable Self-locking Trigger Switch" available on Aliexpress.
+
+  Requires ArduinoJson 5.x
+*********/
 /*
    Libraries needed
 */
@@ -36,21 +47,29 @@ String vcc_parm; //parameter to pass VCC voltage by.
 int failCount = 0;
 ADC_MODE(ADC_VCC);
 bool su_mode = true;
-//Config. Mode
+//Config. Mode (GPIO3 / RX)
 #define CONFIG_PIN 3
 ESP8266WebServer server(80);
 File fsUploadFile;
 const char *APssid = "ESP_Button";
 const char *APpass = "wifibutton";
 
+// Power Latch Pin - Define power latch pin for GPIO5 / D1
+const int powerLatch = 5;
+
 void setup()
 {
+  // Power Latch - Define pin as an OUTPUT
+  pinMode(powerLatch, OUTPUT);
+  // Power Latch - Keeps the circuit on (may need to be pulled LOW after boot?)
+  // digitalWrite(powerLatch, LOW);
   //start serial monitor, SPIFFS and Config. Pin
   Serial.begin(115200);
   pinMode(CONFIG_PIN, INPUT_PULLUP);
   delay(10);
   SPIFFS.begin();
   Serial.println();
+  bootupled();
   Serial.println("Button Booting...");
   Serial.println("SPIFFS Content: ");
   {
@@ -72,7 +91,7 @@ void setup()
   if (su_mode)
   {
 
-//start Config. Mode
+    //start Config. Mode
 #ifdef NOT_DEBUG
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, LOW);
@@ -98,7 +117,9 @@ void setup()
     });
     server.on("/edit", HTTP_PUT, handleFileCreate);
     server.on("/edit", HTTP_DELETE, handleFileDelete);
-    server.on("/edit", HTTP_POST, []() { server.send(200, "text/plain", ""); }, handleFileUpload);
+    server.on("/edit", HTTP_POST, []() {
+      server.send(200, "text/plain", "");
+    }, handleFileUpload);
 
     //pages from SPIFFS
     server.onNotFound([]() {
@@ -133,9 +154,19 @@ void setup()
       if (failCount == wc_p * 2)
       {
         Serial.println("Session Terminated. Giving up after 21 tries connecting to WiFi.");
-        Serial.println("entering deep sleep");
         delay(20);
         fail();
+        Serial.println("Triggering power latch");
+        // Power Latch - Turns the power latch circuit off (pulling it low first just in case?)
+        delay(1500);
+        digitalWrite(powerLatch, LOW);
+        delay(250);
+        digitalWrite(powerLatch, HIGH);
+        delay(250);
+        digitalWrite(powerLatch, LOW);
+        // Power Latch failed?
+        Serial.println("Power latch failed? Entering deep sleep");
+        latchfail();
         ESP.deepSleep(0);
       }
     }
@@ -161,9 +192,19 @@ void loop()
     if (failCount == gr_p + 1)
     {
       Serial.println("Session Terminated. Giving up after 10 tries doing GET Request.");
-      Serial.println("entering deep sleep");
       delay(20);
       fail();
+      Serial.println("Triggering power latch");
+      // Power Latch - Turns the power latch circuit off (pulling it low first just in case?)
+      delay(1500);
+      digitalWrite(powerLatch, LOW);
+      delay(250);
+      digitalWrite(powerLatch, HIGH);
+      delay(250);
+      digitalWrite(powerLatch, LOW);
+      // Power Latch failed?
+      Serial.println("Power latch failed? Entering deep sleep");
+      latchfail();
       ESP.deepSleep(0);
     }
 
@@ -221,7 +262,8 @@ void loop()
     Serial.print("Requesting URL: ");
     Serial.println(url);
 
-    client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+    // had to change GET to POST for ESPHome stuff..
+    client.print(String("POST ") + url + " HTTP/1.1\r\n" +
                  "Host: " + host.c_str() + "\r\n" +
                  "Connection: close\r\n\r\n");
 
@@ -234,7 +276,17 @@ void loop()
         Serial.println(">>> Client Timeout !");
         client.stop();
         //return;
-        Serial.println("entering deep sleep");
+        Serial.println("Triggering power latch");
+        // Power Latch - Turns the power latch circuit off (pulling it low first just in case?)
+        delay(1500);
+        digitalWrite(powerLatch, LOW);
+        delay(250);
+        digitalWrite(powerLatch, HIGH);
+        delay(250);
+        digitalWrite(powerLatch, LOW);
+        // Power Latch failed?
+        Serial.println("Power latch failed? Entering deep sleep");
+        latchfail();
         ESP.deepSleep(0);
       }
     }
@@ -251,9 +303,19 @@ void loop()
     Serial.println("closing connection");
 
     //enter Deep Sleep
-    Serial.println("entering deep sleep");
     delay(100);
     yay();
+    Serial.println("Triggering power latch");
+    // Power Latch - Turns the power latch circuit off (pulling it low first just in case?)
+    delay(1500);
+    digitalWrite(powerLatch, LOW);
+    delay(250);
+    digitalWrite(powerLatch, HIGH);
+    delay(250);
+    digitalWrite(powerLatch, LOW);
+    // Power Latch failed?
+    Serial.println("Power latch failed? Entering deep sleep");
+    latchfail();
     ESP.deepSleep(0);
   }
 }
@@ -301,6 +363,31 @@ void yay()
   delay(250);
   digitalWrite(LED_BUILTIN, LOW);
   delay(350);
+  digitalWrite(LED_BUILTIN, HIGH);
+}
+
+void latchfail()
+{
+  //latch didn't work...
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(700);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(250);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(700);
+  digitalWrite(LED_BUILTIN, HIGH);
+}
+
+void bootupled()
+{
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(250);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(250);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(250);
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
