@@ -32,6 +32,7 @@ You dont need to take apart your button to re-program the url or action. If you 
 ## Useful Links and References
 - An off-the-shelf power latch:
     - [Aliexpress, Tested and works!] https://www.aliexpress.com/item/33054170454.html
+    ![Latch](/../../blob/master/Latch.jpg?raw=true)
     - [Amazon, Untested] https://www.amazon.com/Bistable-flip-Flop-Circuit-Trigger-Power-Off/dp/B09464R4VV
 - Similiar Projects
     - [Bitluni's DashButton] (https://github.com/bitluni/wifiButton)
