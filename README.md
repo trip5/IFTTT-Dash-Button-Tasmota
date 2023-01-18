@@ -31,8 +31,9 @@ You dont need to take apart your button to re-program the url or action. If you 
 
 ## Useful Links and References
 - An off-the-shelf power latch:
-    - [Aliexpress, Tested and works!] https://www.aliexpress.com/item/33054170454.html
+    - [Aliexpress, Tested and works?!] https://www.aliexpress.com/item/33054170454.html
     ![Latch](/../../blob/master/Latch.jpg?raw=true)
+       Actually... I'm not sure it does.  It appeared to, but then I got ghost actions on my network from this device.  I'm unsure if this latching device was waking up or not... it didn't appear to shutdown fully, rather seemed to reset the ESP after sleeping for a very long time...
     - [Amazon, Untested] https://www.amazon.com/Bistable-flip-Flop-Circuit-Trigger-Power-Off/dp/B09464R4VV
 - Similiar Projects
     - [Bitluni's DashButton] (https://github.com/bitluni/wifiButton)
