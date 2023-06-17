@@ -20,13 +20,15 @@
 #include <ESP8266WebServer.h>
 #include <FS.h>
 
+// Change Builtin pin to 2 (D4) for an external LED (Same as internal but inverted)
+
 /*
    Configurable Settings
 
    Connect CONFIG_PIN(Default GPIO_03[RX]) to GND during startup to enter Config. Mode:
-      1. Connect to 'ESP_Button' WiFi Access Point, with the password 'wifibutton'
+      1. Connect to 'ESP_Button' WiFi Access Point, with no password (password is possible, check APpass below).
       2. Visit http://192.168.4.1 to open the configuration page, or  http://192.168.4.1/edit to see the filesystem.
-      3. After seeting your values, click on the 'Save' button then the 'Restart'
+      3. After seeting your values, click on the 'Save' button then the 'Restart' (or press the latch button to abort/shutdown).
       4. Your button is now configured.
 */
 String ssid;
@@ -42,27 +44,28 @@ String vcc_parm; //parameter to pass VCC voltage by.
 /*
    System Variables
 */
-//#define NOT_DEBUG //wether to enable debug or to show indication lights instead
+//#define NOT_DEBUG //whether to enable debug or to show indication lights instead
 //Normal Mode
 int failCount = 0;
 ADC_MODE(ADC_VCC);
 bool su_mode = true;
-//Config. Mode (GPIO3 / RX)
-#define CONFIG_PIN 3
+//Config. Mode (GPIO3 / RX) - can't be GPIO0/D3!
+#define CONFIG_PIN 3 
+
 ESP8266WebServer server(80);
 File fsUploadFile;
 const char *APssid = "ESP_Button";
-const char *APpass = "wifibutton";
+const char *APpass = ""; 
 
-// Power Latch Pin - Define power latch pin for GPIO5 / D1
-const int powerLatch = 5;
+// Power Latch Pin - Define power latch pin for GPIO4 / D2
+const int powerLatch = 4;
 
 void setup()
 {
   // Power Latch - Define pin as an OUTPUT
   pinMode(powerLatch, OUTPUT);
   // Power Latch - Keeps the circuit on (may need to be pulled LOW after boot?)
-  // digitalWrite(powerLatch, LOW);
+  digitalWrite(powerLatch, LOW);
   //start serial monitor, SPIFFS and Config. Pin
   Serial.begin(115200);
   pinMode(CONFIG_PIN, INPUT_PULLUP);
@@ -97,6 +100,9 @@ void setup()
     digitalWrite(LED_BUILTIN, LOW);
 #endif
     Serial.println("Entering Config. Mode!");
+
+    //re-config Power Latch - Define pin as an INPUT
+    pinMode(powerLatch, INPUT);
 
     //start WiFi Access Point
     Serial.println("Configuring access point...");
@@ -156,18 +162,7 @@ void setup()
         Serial.println("Session Terminated. Giving up after 21 tries connecting to WiFi.");
         delay(20);
         fail();
-        Serial.println("Triggering power latch");
-        // Power Latch - Turns the power latch circuit off (pulling it low first just in case?)
-        delay(1500);
-        digitalWrite(powerLatch, LOW);
-        delay(250);
-        digitalWrite(powerLatch, HIGH);
-        delay(250);
-        digitalWrite(powerLatch, LOW);
-        // Power Latch failed?
-        Serial.println("Power latch failed? Entering deep sleep");
-        latchfail();
-        ESP.deepSleep(0);
+        shutdownesp();
       }
     }
 
@@ -184,6 +179,12 @@ void loop()
   if (su_mode)
   {
     server.handleClient();
+    if (digitalRead(powerLatch) == LOW)
+    {
+        Serial.println("Button pressed.  Aborting Config Mode.");
+        delay(50);
+        shutdownesp();
+    }
   }
   else
   {
@@ -194,18 +195,7 @@ void loop()
       Serial.println("Session Terminated. Giving up after 10 tries doing GET Request.");
       delay(20);
       fail();
-      Serial.println("Triggering power latch");
-      // Power Latch - Turns the power latch circuit off (pulling it low first just in case?)
-      delay(1500);
-      digitalWrite(powerLatch, LOW);
-      delay(250);
-      digitalWrite(powerLatch, HIGH);
-      delay(250);
-      digitalWrite(powerLatch, LOW);
-      // Power Latch failed?
-      Serial.println("Power latch failed? Entering deep sleep");
-      latchfail();
-      ESP.deepSleep(0);
+      shutdownesp();
     }
 
     Serial.print("Try: ");
@@ -250,13 +240,7 @@ void loop()
     //create the URI for the request
     if (s_vcc)
     {
-      if (url.indexOf("?") > 0) {
-        // if the configured url already has a querystring, append an ampersand
-        url += "&";
-      } else {
-        // otherwise start the new querystring
-        url += "?";
-      }
+      url += "?";
       url += vcc_parm;
       url += "=";
       uint32_t getVcc = ESP.getVcc();
@@ -282,18 +266,7 @@ void loop()
         Serial.println(">>> Client Timeout !");
         client.stop();
         //return;
-        Serial.println("Triggering power latch");
-        // Power Latch - Turns the power latch circuit off (pulling it low first just in case?)
-        delay(1500);
-        digitalWrite(powerLatch, LOW);
-        delay(250);
-        digitalWrite(powerLatch, HIGH);
-        delay(250);
-        digitalWrite(powerLatch, LOW);
-        // Power Latch failed?
-        Serial.println("Power latch failed? Entering deep sleep");
-        latchfail();
-        ESP.deepSleep(0);
+        shutdownesp();
       }
     }
 
@@ -311,24 +284,34 @@ void loop()
     //enter Deep Sleep
     delay(100);
     yay();
-    Serial.println("Triggering power latch");
-    // Power Latch - Turns the power latch circuit off (pulling it low first just in case?)
-    delay(1500);
-    digitalWrite(powerLatch, LOW);
-    delay(250);
-    digitalWrite(powerLatch, HIGH);
-    delay(250);
-    digitalWrite(powerLatch, LOW);
-    // Power Latch failed?
-    Serial.println("Power latch failed? Entering deep sleep");
-    latchfail();
-    ESP.deepSleep(0);
+    shutdownesp();
   }
 }
 
 /*
    Universal Functions
 */
+
+void shutdownesp()
+{
+  Serial.println("Triggering power latch");
+  // Power Latch - Turns the power latch circuit off (pulling it low first just in case?)
+  Serial.println("low 500");
+  delay(250);
+  digitalWrite(powerLatch, LOW);
+  Serial.println("high 250");
+  delay(250);
+  digitalWrite(powerLatch, HIGH);
+  Serial.println("low 250");
+  delay(250);
+  digitalWrite(powerLatch, LOW);
+  delay(250);
+  // Power Latch failed?
+  Serial.println("Power latch failed? Entering deep sleep");
+  latchfail();
+  ESP.deepSleep(0);
+}
+
 
 void fail()
 {
@@ -379,10 +362,15 @@ void latchfail()
   digitalWrite(LED_BUILTIN, LOW);
   delay(700);
   digitalWrite(LED_BUILTIN, HIGH);
-  delay(250);
+  delay(700);
   digitalWrite(LED_BUILTIN, LOW);
   delay(700);
   digitalWrite(LED_BUILTIN, HIGH);
+  delay(700);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(700);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(700);
 }
 
 void bootupled()
