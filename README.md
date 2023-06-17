@@ -77,7 +77,7 @@ Backlog SwitchMode1 2; SetOption13 0; SetOption63 0; SetOption114 1; WifiConfig 
 
 Rule1 (change the WebQuery as needed):
 ```
-Rule1 ON Power1#Boot DO Backlog LedPower1 0; Var1 0; Delay 20; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 1; Var1 1 ENDON ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog LedPower1 0; Delay 10; LedPower1 1; Delay 20; LedPower1 0; Delay 10; LedPower1 1; Delay 20; LedPower1 0; Delay 10; LedPower1 1; Delay 20; LedPower1 0; Var1 5 ENDON ON Var1#State==4 DO Backlog LedPower 0; Delay 30; LedPower1 1; Delay 10; LedPower 0; Delay 30; LedPower1 1; Delay 10; LedPower1 0; Var1 5 ENDON ON Var1#State==5 DO Backlog Power1 0; Delay 5; Power1 1 ENDON
+Rule1 ON Power1#Boot DO Backlog LedPower1 0; Var1 0; Delay 20; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 1; Var1 1 ENDON ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON ON Var1#State==4 DO Backlog LedPower 0; Delay 10; LedPower1 1; Delay 10; LedPower 0; Var1 5 ENDON ON Var1#State==5 DO Backlog Power1 0; Delay 5; Power1 1 ENDON
 ```
 
 Var1 Values:
@@ -85,7 +85,13 @@ Var1 Values:
 0 Boot [led off]
 1 Wi-fi connected, attempting action [led on]
 2 Action Failed (delay 2s, try again) [off 2s; on]
-3 Total Failure & shutdown [off 1s; on 2s; off 1s; on 2s; off 1s; on 2s; off]
-4 Success [off 3s; on 1s; off 3s; on 1s; off]
+3 Total Failure & shutdown [off; on; off; on; off; on; off (quick)]
+4 Success [off 1s; on 1s; off]
 5 Shutdown
 ```
+
+## Adding a TP4056 Charger
+
+I can't verify 100% this works or is safe but it seems to work...?  This allows charging of the Battery via the D1 Mini port and still allow the D1 to be flashed via PC.  Of course, the Dash button will come online and execute an action while being charged and the button would be completely useless to stop it.  It would probably work for the Arduino code as well.
+
+![TasmotaDashButton](/../../blob/master/TasmotaDashButton-w-TP4056.png?raw=true)
