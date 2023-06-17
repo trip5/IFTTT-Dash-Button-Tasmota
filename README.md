@@ -61,6 +61,7 @@ You dont need to take apart your button to re-program the url or action. If you 
 ## Final Thoughts (Tasmota!)
 - I updated this github to show what actually worked but I never completed this project partly because I kept ruining batteries trying to squeeze everything into the tiny enclosure (including a charge circuit with a USB port).  Also, I think this type of project could be done just as well using vanilla Tasmota.
 - You can still use almost the same circuit as above but because you can just connect the D1 to a computer, there's no need for a config button.  Once connected to a steady power source, the latch can't cut the power anyways.
+- The 100K resistor in the diagram below is NOT needed.  It just allows the latch to interrupt Tasmota from booting if you should change your mind and decide to shut off the D1.  I think perhaps the ESP8266 is pulling the circuit high on boot, and the button then has no effect.  Without the 100K, the latch circuit will still operate just fine but it's up to Tasmota to shut off the power.
 
 ![TasmotaDashButton](/../../blob/master/TasmotaDashButton.png?raw=true)
 
