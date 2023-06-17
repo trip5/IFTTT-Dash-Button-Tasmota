@@ -29,14 +29,23 @@ You dont need to take apart your button to re-program the url or action. If you 
 3. After setting your values, click on the 'Save' button then the 'Restart'
 ![Configuration Interface](https://luigi-pizzolito.github.io/Gangster45671.github.io/IFTTT-Dash-Button/pictures/Config.png)
 
-## Useful Links and References
+## Supplies
+
 - An off-the-shelf power latch:
-    - [Aliexpress, Tested and works?!] https://www.aliexpress.com/item/33054170454.html
+    - [Latch - Aliexpress, Tested](https://www.aliexpress.com/item/33054170454.html)
     ![Latch](/../../blob/master/Latch.jpg?raw=true)
-       Actually... I'm not sure it does.  It appeared to, but then I got ghost actions on my network from this device.  I'm unsure if this latching device was waking up or not... it didn't appear to shutdown fully, rather seemed to reset the ESP after sleeping for a very long time...
-    - [Amazon, Untested] https://www.amazon.com/Bistable-flip-Flop-Circuit-Trigger-Power-Off/dp/B09464R4VV
+    - [Latch - Amazon, Untested](https://www.amazon.com/Bistable-flip-Flop-Circuit-Trigger-Power-Off/dp/B09464R4VV)
+    - [Tiny enclosure - Aliexpress](https://www.aliexpress.com/item/1005003942772806.html)
+    - [Small enclosure - Aliexpress](https://www.aliexpress.com/item/1005004466963855.html)
+    - [Battery to fit tiny enclosure - Aliexpress](https://www.aliexpress.com/item/1005004468895961.html)
+
+## Diagram
+
+![ArduinoDashButton](/../../blob/master/ArduinoDashButton.png?raw=true)
+
+## Useful Links
 - Similiar Projects
-    - [Bitluni's DashButton] (https://github.com/bitluni/wifiButton)
+    - [Bitluni's DashButton](https://github.com/bitluni/wifiButton)
 - ESP Info
     - Pinouts
         - [ESP-12 Pinout](https://esp8266.github.io/Arduino/versions/2.0.0/doc/esp12.png)
@@ -47,3 +56,35 @@ You dont need to take apart your button to re-program the url or action. If you 
 - GitHub Markdown Info
     - [Formatting and Syntax](https://help.github.com/articles/basic-writing-and-formatting-syntax/)
     - [Emoji Cheat Sheet](https://www.webpagefx.com/tools/emoji-cheat-sheet/)
+
+
+## Final Thoughts (Tasmota!)
+- I updated this github to show what actually worked but I never completed this project partly because I kept ruining batteries trying to squeeze everything into the tiny enclosure (including a charge circuit with a USB port).  Also, I think this type of project could be done just as well using vanilla Tasmota.
+- You can still use almost the same circuit as above but because you can just connect the D1 to a computer, there's no need for a config button.  Once connected to a steady power source, the latch can't cut the power anyways.
+
+![TasmotaDashButton](/../../blob/master/TasmotaDashButton.png?raw=true)
+
+The Template:
+```
+{"NAME":"DashButton","GPIO":[0,0,288,0,256,0,0,0,0,0,0,0,0,0],"FLAG":0,"BASE":18}
+```
+
+Needed console options:
+```
+Backlog SwitchMode1 2; SetOption13 0; SetOption63 0; SetOption114 1; WifiConfig 7; PowerOnState 0;
+```
+
+Rule1 (change the WebQuery as needed):
+```
+Rule1 ON Power1#Boot DO Backlog LedPower1 0; Var1 0; Delay 20; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 1; Var1 1 ENDON ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog LedPower1 0; Delay 10; LedPower1 1; Delay 20; LedPower1 0; Delay 10; LedPower1 1; Delay 20; LedPower1 0; Delay 10; LedPower1 1; Delay 20; LedPower1 0; Var1 5 ENDON ON Var1#State==4 DO Backlog LedPower 0; Delay 30; LedPower1 1; Delay 10; LedPower 0; Delay 30; LedPower1 1; Delay 10; LedPower1 0; Var1 5 ENDON ON Var1#State==5 DO Backlog Power1 0; Delay 5; Power1 1 ENDON
+```
+
+Var1 Values:
+```
+0 Boot [led off]
+1 Wi-fi connected, attempting action [led on]
+2 Action Failed (delay 2s, try again) [off 2s; on]
+3 Total Failure & shutdown [off 1s; on 2s; off 1s; on 2s; off 1s; on 2s; off]
+4 Success [off 3s; on 1s; off 3s; on 1s; off]
+5 Shutdown
+```
