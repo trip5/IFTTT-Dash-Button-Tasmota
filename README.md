@@ -33,7 +33,7 @@ You dont need to take apart your button to re-program the url or action. If you 
 
 - An off-the-shelf power latch:
     - [Latch - Aliexpress, Tested](https://www.aliexpress.com/item/33054170454.html)
-    ![Latch](/../../blob/master/Latch.jpg?raw=true)
+    ![Latch](Latch.jpg?raw=true)
     - [Latch - Amazon, Untested](https://www.amazon.com/Bistable-flip-Flop-Circuit-Trigger-Power-Off/dp/B09464R4VV)
     - [Tiny enclosure - Aliexpress](https://www.aliexpress.com/item/1005003942772806.html)
     - [Small enclosure - Aliexpress](https://www.aliexpress.com/item/1005004466963855.html)
@@ -41,7 +41,7 @@ You dont need to take apart your button to re-program the url or action. If you 
 
 ## Diagram
 
-![ArduinoDashButton](/../../blob/master/ArduinoDashButton.png?raw=true)
+![ArduinoDashButton](ArduinoDashButton.png?raw=true)
 
 ## Useful Links
 - Similiar Projects
@@ -63,7 +63,7 @@ You dont need to take apart your button to re-program the url or action. If you 
 - You can still use almost the same circuit as above but because you can just connect the D1 to a computer, there's no need for a config button.  Once connected to a steady power source, the latch can't cut the power anyways.
 - The 100K resistor in the diagram below is NOT needed.  It just allows the latch to interrupt Tasmota from booting if you should change your mind and decide to shut off the D1.  I think perhaps the ESP8266 is pulling the circuit high on boot, and the button then has no effect.  Without the 100K, the latch circuit will still operate just fine but it's up to Tasmota to shut off the power.
 
-![TasmotaDashButton](/../../blob/master/TasmotaDashButton.png?raw=true)
+![TasmotaDashButton](TasmotaDashButton.png?raw=true)
 
 The Template:
 ```
@@ -104,4 +104,4 @@ Var1 Values:
 
 I can't verify 100% this works or is safe but it seems to work...?  This allows charging of the Battery via the D1 Mini port and still allow the D1 to be flashed via PC.  Of course, the Dash button will come online and execute an action while being charged and the button would be completely useless to stop it.  It would probably work for the Arduino code as well.
 
-![TasmotaDashButton](/../../blob/master/TasmotaDashButton-w-TP4056.png?raw=true)
+![TasmotaDashButton](TasmotaDashButton-w-TP4056.png?raw=true)
