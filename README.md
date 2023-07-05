@@ -72,7 +72,7 @@ The Template:
 
 Needed console options:
 ```
-Backlog SwitchMode1 2; SetOption13 0; SetOption63 0; SetOption114 1; WifiConfig 7; PowerOnState 0;
+Backlog SwitchMode1 2; SetOption13 0; SetOption63 0; SetOption114 1; WifiConfig 7; PowerOnState 0; SetOption65 1;
 ```
 
 Rule1 (contains boot commands activates Rule2, deactivates Rule3:
