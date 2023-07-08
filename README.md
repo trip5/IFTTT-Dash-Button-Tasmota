@@ -9,7 +9,7 @@ Push a button, do a POST (or GET) Request.
  - [X] Reconfigurable
  
 ## About
-Forked from https://github.com/Luigi-Pizzolito/IFTTT-Dash-Button. Power Latch idea originally by Rui Santos at https://randomnerdtutorials.com but I wanted to use an off-the-shelf component, namely the "Flip-Flop Latch Bistable Self-locking Trigger Switch" available on Aliexpress.
+Originally forked from [Luigi-Pizzolito/IFTTT-Dash-Button](https://github.com/Luigi-Pizzolito/IFTTT-Dash-Button) (then de-forked since the scope of my project is different). More [here](https://www.instructables.com/Tiny-ESP8266-Dash-Button-Re-Configurable/). Power Latch idea originally by [Rui Santos](https://randomnerdtutorials.com/latching-power-switch-circuit-auto-power-off-circuit-esp32-esp8266-arduino/) but I wanted to use an off-the-shelf component, namely the "Flip-Flop Latch Bistable Self-locking Trigger Switch" available on Aliexpress.
 
 ### GET Requests
 When the button is pushed a POST or GET request is made to a webpage.
@@ -27,7 +27,7 @@ You dont need to take apart your button to re-program the url or action. If you 
 1. Connect to 'ESP_Button' WiFi Access Point, with the password 'wifibutton'
 2. Visit http://192.168.4.1 to open the configuration page
 3. After setting your values, click on the 'Save' button then the 'Restart'
-![Configuration Interface](https://luigi-pizzolito.github.io/Gangster45671.github.io/IFTTT-Dash-Button/pictures/Config.png)
+![Configuration Interface](config.png?raw=true)
 
 ## Supplies
 
