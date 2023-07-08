@@ -112,7 +112,7 @@ Var1 Values [and led actions]:
 
 ## Adding a TP4056 Charger
 
-I can't verify 100% this works or is safe but it seems to work...?  This allows charging of the Battery via the D1 Mini port and still allow the D1 to be flashed via PC.  Of course, the Dash button will come online and execute an action while being charged and the button would be completely useless to stop it unless you complicate the rules further to check for the voltage level... I use a 560K resistor despite seeing a 500K is recommended to check for 5V... I'm not very certain what the lowest value resistor you can use here but the A0 pin may be damaged if exposed to more than 1V so if err on the side of a higher resistor...
+I can't verify 100% this works or is safe but it seems to work...?  This allows charging of the Battery via the D1 Mini port and still allow the D1 to be flashed via PC.  Of course, the Dash button will come online and execute an action while being charged and the button would be completely useless to stop it unless you complicate the rules further to check for the voltage level... I use a 560K resistor despite seeing a 500K is recommended to check for 5V... I'm not very certain what the lowest value resistor you can use here but the A0 pin may be damaged if exposed to more than 1V so if your selection of resistors is limited err on the side of higher resistance...
 
 ![TasmotaDashButton](TasmotaDashButton-w-TP4056.png?raw=true)
 
