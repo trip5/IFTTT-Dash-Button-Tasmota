@@ -75,22 +75,22 @@ Needed console options:
 Backlog SwitchMode1 2; SetOption13 0; SetOption63 0; SetOption114 1; WifiConfig 7; PowerOnState 0;
 ```
 
-Rule1 (contains boot commands activates Rule2, deactivates Rule3:
+Rule3 (contains boot commands activates Rule2, deactivates Rule3:
 ```
-Rule1 ON Power1#Boot DO Backlog LedPower1 1; Var1 0; Delay 20; Rule2 On; Rule3 Off; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Var1 1 ENDON
-```
-
-Rule2 (contains the WebQuery loop, activates Rule3 when ready to shutdown - change the WebQuery as needed):
-```
-Rule2 ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog Rule3 On; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON ON Var1#State==4 DO Backlog Rule3 On; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON
+Rule3 ON Power1#Boot DO Backlog LedPower1 1; Var1 0; Delay 20; Rule2 On; Rule1 Off; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Var1 1 ENDON
 ```
 
-Rule3 (deactivates Rule2 to prevent looping due to Webquery delays and does shutdown):
+Rule2 (contains the WebQuery loop, activates Rule1 when ready to shutdown - change the WebQuery as needed):
 ```
-Rule3 ON Var1#State==5 DO Backlog Rule2 Off; Power1 0; Delay 5; Power1 1; Delay 5; Power1 0 ENDON
+Rule2 ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog Rule3 On; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON ON Var1#State==4 DO Backlog Rule1 On; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON
 ```
 
-Var1 Values:
+Rule1 (deactivates Rule2 to prevent looping due to Webquery delays and does shutdown):
+```
+Rule1 ON Var1#State==5 DO Backlog Rule2 Off; Power1 0; Delay 5; Power1 1; Delay 5; Power1 0 ENDON
+```
+
+Var1 Values [and led actions]:
 ```
 0 Boot [led on]
 1 Wi-fi connected [led off], attempting action [led on]
@@ -99,6 +99,8 @@ Var1 Values:
 4 Success [off; on; off (quick)]
 5 Shutdown
 ```
+
+The reason for putting Rule3 as the most important Rule is because I did encounter some issues with using it as Rule1.  Tasmota has a fail-safe that seems to detect improper shutdowns or strange restarts and will begin "safe mode" procedures by deactivating Rule1 on next reboot, then Rule2... making Rule3 the one that controls the other Rules seems to sidestep this a little.
 
 ## Adding a TP4056 Charger
 
