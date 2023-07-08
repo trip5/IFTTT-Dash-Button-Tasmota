@@ -72,22 +72,32 @@ The Template:
 
 Needed console options:
 ```
-Backlog SwitchMode1 2; SetOption13 0; SetOption63 0; SetOption114 1; WifiConfig 7; PowerOnState 0; SetOption65 1;
+Backlog SwitchMode1 2; WifiConfig 7; PowerOnState 0; SetOption36 0; SetOption65 1
 ```
 
-Rule3 (contains boot commands activates Rule2, deactivates Rule3:
+Explanation:
 ```
-Rule3 ON Power1#Boot DO Backlog LedPower1 1; Var1 0; Delay 20; Rule2 On; Rule1 Off; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Var1 1 ENDON
+SwitchMode1 2 - set switch to inverted follow mode
+WifiConfig 7 - set Wi-Fi Manager (web server at 192.168.4.1) as the current configuration tool restricted to reset settings only
+(4 may also work if you want to retry other AP without rebooting)
+PowerOnState 0 - keeps power off (to the latch) after power up
+SetOption36 0 - disable boot loop control
+SetOption65 1 - disable device recovery using fast power cycle detection
+```
+
+Rule1 (contains boot commands, activates Rule2 and Rule3):
+```
+Rule1 ON Power1#Boot DO Backlog LedPower1 1; Var1 0; Delay 20; Rule2 On; Rule3 On; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Var1 1 ENDON
 ```
 
 Rule2 (contains the WebQuery loop, activates Rule1 when ready to shutdown - change the WebQuery as needed):
 ```
-Rule2 ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog Rule3 On; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON ON Var1#State==4 DO Backlog Rule1 On; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON
+Rule2 ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON ON Var1#State==4 DO Backlog LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON
 ```
 
-Rule1 (deactivates Rule2 to prevent looping due to Webquery delays and does shutdown):
+Rule3 (deactivates Rule2 to prevent looping due to Webquery delays and does shutdown):
 ```
-Rule1 ON Var1#State==5 DO Backlog Rule2 Off; Power1 0; Delay 5; Power1 1; Delay 5; Power1 0 ENDON
+Rule3 ON Var1#State==5 DO Backlog Rule2 Off; Power1 0; Delay 5; Power1 1; Delay 5; Power1 0 ENDON
 ```
 
 Var1 Values [and led actions]:
@@ -97,13 +107,47 @@ Var1 Values [and led actions]:
 2 Action Failed (delay 2s, try again) [off 2s]
 3 Total Failure & shutdown [off; on; off; on; off; on; off (quick)]
 4 Success [off; on; off (quick)]
-5 Shutdown
+5 Shutdown [led on until shutdown]
 ```
-
-The reason for putting Rule3 as the most important Rule is because I did encounter some issues with using it as Rule1.  Tasmota has a fail-safe that seems to detect improper shutdowns or strange restarts and will begin "safe mode" procedures by deactivating Rule1 on next reboot, then Rule2... making Rule3 the one that controls the other Rules seems to sidestep this a little.
 
 ## Adding a TP4056 Charger
 
-I can't verify 100% this works or is safe but it seems to work...?  This allows charging of the Battery via the D1 Mini port and still allow the D1 to be flashed via PC.  Of course, the Dash button will come online and execute an action while being charged and the button would be completely useless to stop it.  It would probably work for the Arduino code as well.
+I can't verify 100% this works or is safe but it seems to work...?  This allows charging of the Battery via the D1 Mini port and still allow the D1 to be flashed via PC.  Of course, the Dash button will come online and execute an action while being charged and the button would be completely useless to stop it unless you complicate the rules further to check for the voltage level... I use a 560K resistor despite seeing a 500K is recommended to check for 5V... I'm not very certain what the lowest value resistor you can use here but the A0 pin may be damaged if exposed to more than 1V so if err on the side of a higher resistor...
 
 ![TasmotaDashButton](TasmotaDashButton-w-TP4056.png?raw=true)
+
+The Template:
+```
+{"NAME":"DashButton","GPIO":[0,0,0,0,256,288,0,0,0,0,0,0,0,4704],"FLAG":0,"BASE":18}
+```
+
+Use the same console options as above:
+```
+Backlog SwitchMode1 2; WifiConfig 7; PowerOnState 0; SetOption36 0; SetOption65 1
+```
+
+Also need to set some ADC Parameters (with a 560K resistor measures >400 if charging and below 200 if on battery power):
+```
+AdcParam 6, 0, 1023, 0, 1000
+```
+
+Rule1 (contains boot commands, activates Rule3, activates Rule2 only if Var1 didn't get set to 5+):
+```
+Rule1 ON Power1#Boot DO Backlog LedPower1 1; Var1 0; Delay 20; Rule3 On; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Add1 1; Rule2 On ENDON ON Var1>=5 DO Backlog Rule 3 Off; LedPower 1 ENDON
+```
+
+Rule2 (same as above: contains the WebQuery loop, activates Rule1 when ready to shutdown - change the WebQuery as needed):
+```
+Rule2 ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON ON Var1#State==4 DO Backlog LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON
+```
+
+Rule3 (deactivates Rule2 to prevent looping due to Webquery delays and does shutdown, checks A0 pin for high voltage and sets Var1 to 5 if it is):
+```
+Rule1 ON Var1#State==5 DO Backlog Rule2 Off; LedPower 1; Power1 0; Delay 5; Power1 1; Delay 5; Power1 0; Var1 6 ENDON ON Analog#A0>300 DO Var1 5 ENDON
+```
+
+Var1 values are the same as above except that in case it doesn't shut off, will be equal to 6 to allow the addition to Rule1 to turn Rule3 off. Otherwise, while charging, it will constantly keep re-activating the last part of Rule3, clogging up the console log. Despite being turned off, Rule3 may activate one last time and the final state of Var1 will be 5. In any case, it seems to work to keep Rule2 from activating. Sometimes, the LED turns on immediately and stays on and sometimes it seems to wait for the RulesTimer.
+
+Some other caveats of using this circuit is that sometimes while charging, the latch is actually on so when unplugging the device, the LED remains on. You should be able to press the button to simply fully turn it off. Also, sometimes when pressing the button too soon after charging, the A0 pin will measure a higher voltage which will prevent Rule2 from being activated. Try again after it fails.
+
+You may need to check the A0 output in a web browser before setting the number 300 in Rule3, especially if you use a different resistor or a non-lithium-ion battery.  The easiest way would be to plug it into a computer, see what the high end number is, click the button to activate the latch, wait until the RulesTimeer expires (30s) then unplug it and wait a bit for A0 to level out, then choose a number about midway.
