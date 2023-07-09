@@ -90,7 +90,7 @@ Rule1 (contains boot commands, activates Rule2 and Rule3):
 Rule1 ON Power1#Boot DO Backlog LedPower1 1; Var1 0; Delay 20; Rule2 On; Rule3 On; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Var1 1 ENDON
 ```
 
-Rule2 (contains the WebQuery loop, activates Rule1 when ready to shutdown - change the WebQuery as needed):
+Rule2 (contains the WebQuery loop, activates Rule3 when ready to shutdown - change the WebQuery as needed):
 ```
 Rule2 ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON ON Var1#State==4 DO Backlog LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON
 ```
@@ -131,9 +131,9 @@ Also need to set some ADC Parameters (with a 560K resistor measures >400 if char
 AdcParam 6, 0, 1023, 0, 1000
 ```
 
-Rule1 (contains boot commands, activates Rule3, activates Rule2 only if Var1 didn't get set to 5+):
+Rule1 (combines Rule1 and Rule3 from above: contains boot commands, activates Rule2 and Rule3, deactivates Rule2 to prevent looping due to Webquery delays and does shutdown):
 ```
-Rule1 ON Power1#Boot DO Backlog LedPower1 1; Var1 0; Delay 20; Rule3 On; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Add1 1; Rule2 On ENDON ON Var1>=5 DO Backlog Rule 3 Off; LedPower 1 ENDON
+Rule1 ON Power1#Boot DO Backlog LedPower1 1; Var1 0; Delay 20; Rule2 On; Rule3 On; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Add1 1 ENDON ON Var1#State==5 DO Backlog Rule2 Off; LedPower 1; Power1 0; Delay 5; Power1 1; Delay 5; Power1 0 ENDON
 ```
 
 Rule2 (same as above: contains the WebQuery loop, activates Rule1 when ready to shutdown - change the WebQuery as needed):
@@ -141,13 +141,13 @@ Rule2 (same as above: contains the WebQuery loop, activates Rule1 when ready to 
 Rule2 ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON ON Var1#State==4 DO Backlog LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON
 ```
 
-Rule3 (deactivates Rule2 to prevent looping due to Webquery delays and does shutdown, checks A0 pin for high voltage and sets Var1 to 5 if it is):
+Rule3 (checks A0 pin for high voltage and sets Var1 to 6 if true, then deactivates Rule2 and Rule3):
 ```
-Rule1 ON Var1#State==5 DO Backlog Rule2 Off; LedPower 1; Power1 0; Delay 5; Power1 1; Delay 5; Power1 0; Var1 6 ENDON ON Analog#A0>300 DO Var1 5 ENDON
+Rule3 ON Analog#A0>300 DO Backlog Var1 6; Rule3 Off; Rule2 Off; Delay 20; LedPower 1 ENDON
 ```
 
-Var1 values are the same as above except that in case it doesn't shut off, will be equal to 6 to allow the addition to Rule1 to turn Rule3 off. Otherwise, while charging, it will constantly keep re-activating the last part of Rule3, clogging up the console log. Despite being turned off, Rule3 may activate one last time and the final state of Var1 will be 5. In any case, it seems to work to keep Rule2 from activating. Sometimes, the LED turns on immediately and stays on and sometimes it seems to wait for the RulesTimer.
+Var1 values are the same as above except that if high voltage (charging) is detected, it will be equal to 6. Otherwise, while charging, it will constantly keep re-activating the last part of Rule3, clogging up the console log. Despite being turned off, Rule3 may activate several times. In any case, it seems to work to keep Rule2 from activating and causing the latch to turn on.
 
-Some other caveats of using this circuit is that sometimes while charging, the latch is actually on so when unplugging the device, the LED remains on. You should be able to press the button to simply fully turn it off. Also, sometimes when pressing the button too soon after charging, the A0 pin will measure a higher voltage which will prevent Rule2 from being activated. Try again after it fails.
+Some other caveats of using this circuit is that sometimes while charging, the latch is actually on so when unplugging the device, the LED remains on. You should be able to press the button to simply fully turn it off. Also, sometimes when pressing the button too soon after charging, the A0 pin will measure a higher voltage - which prevents the WebQuery from happening.
 
-You may need to check the A0 output in a web browser before setting the number 300 in Rule3, especially if you use a different resistor or a non-lithium-ion battery.  The easiest way would be to plug it into a computer, see what the high end number is, click the button to activate the latch, wait until the RulesTimer expires (30s) then unplug it and wait a bit for A0 to level out, then choose a number about midway.
+You may need to check the A0 output in a web browser. The number 300 in Rule3 worked for me but it may not work for you, especially if you use a different resistor.  The easiest way would be to plug it into a computer, see what the high end number is, click the button to activate the latch, wait until the RulesTimer expires (30s) then unplug it and wait a bit for A0 to level out, then choose a number about midway.
