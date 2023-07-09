@@ -87,12 +87,12 @@ SetOption65 1 - disable device recovery using fast power cycle detection
 
 Rule1 (contains boot commands, activates Rule2 and Rule3):
 ```
-Rule1 ON Power1#Boot DO Backlog LedPower1 1; Var1 0; Delay 20; Rule2 On; Rule3 On; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Var1 1 ENDON
+Rule1 ON Power1#Boot DO Backlog Rule2 On; Rule3 On; LedPower1 1; Var1 0; Delay 20; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Var1 1 ENDON
 ```
 
 Rule2 (contains the WebQuery loop, activates Rule3 when ready to shutdown - change the WebQuery as needed):
 ```
-Rule2 ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON ON Var1#State==4 DO Backlog LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON
+Rule2 ON Var1#State==1 DO Backlog LedPower1 1; WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog LedPower1 0; LedPower1 1; LedPower1 0; LedPower1 1; LedPower1 0; LedPower1 1; LedPower1 0; Var1 5 ENDON ON Var1#State==4 DO Backlog LedPower1 0; LedPower1 1; LedPower1 0; Var1 5 ENDON
 ```
 
 Rule3 (deactivates Rule2 to prevent looping due to Webquery delays and does shutdown):
@@ -131,23 +131,23 @@ Also need to set some ADC Parameters (with a 560K resistor measures >400 if char
 AdcParam 6, 0, 1023, 0, 1000
 ```
 
-Rule1 (combines Rule1 and Rule3 from above: contains boot commands, activates Rule2 and Rule3, deactivates Rule2 to prevent looping due to Webquery delays and does shutdown):
+Rule1 (combines Rule1 and Rule3 from above: contains boot commands, activates Rule3 with 5=ONCE, deactivates Rule2 to prevent looping due to Webquery delays and does shutdown):
 ```
-Rule1 ON Power1#Boot DO Backlog LedPower1 1; Var1 0; Delay 20; Rule2 On; Rule3 On; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Add1 1 ENDON ON Var1#State==5 DO Backlog Rule2 Off; LedPower 1; Power1 0; Delay 5; Power1 1; Delay 5; Power1 0 ENDON
+Rule1 ON Power1#Boot DO Backlog Rule2 Off; Rule3 5; Rule3 On; LedPower1 1; Var1 0; Delay 20; RuleTimer1 30 ENDON ON System#Boot DO Backlog LedPower1 0; Var1 1 ENDON ON Var1#State==5 DO Backlog Rule2 Off; LedPower1 1; Power1 0; Delay 10; Power1 1; Delay 10; Power1 0 ENDON
 ```
 
 Rule2 (same as above: contains the WebQuery loop, activates Rule1 when ready to shutdown - change the WebQuery as needed):
 ```
-Rule2 ON Var1#State==1 DO Backlog WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON ON Var1#State==4 DO Backlog LedPower 0; LedPower 1; LedPower 0; Var1 5 ENDON
+Rule2 ON Var1#State==1 DO Backlog LedPower1 1; WebQuery http://192.168.1.82/cm?cmnd=Power%20Toggle POST ENDON ON WebQuery#Data=Done DO Backlog Var1 4 ENDON ON WebQuery#Data$!Done DO Backlog Var1 2 ENDON ON Var1#State==2 DO Backlog LedPower1 0; Delay 20; LedPower1 1; Var1 1 ENDON ON Rules#Timer=1 DO Backlog Var1 3 ENDON ON Var1#State==3 DO Backlog LedPower1 0; LedPower1 1; LedPower1 0; LedPower1 1; LedPower1 0; LedPower1 1; LedPower1 0; Var1 5 ENDON ON Var1#State==4 DO Backlog LedPower1 0; LedPower1 1; LedPower1 0; Var1 5 ENDON
 ```
 
 Rule3 (checks A0 pin for high voltage and sets Var1 to 6 if true, then deactivates Rule2 and Rule3):
 ```
-Rule3 ON Analog#A0>300 DO Backlog Var1 6; Rule3 Off; Rule2 Off; Delay 20; LedPower 1 ENDON
+Rule3 ON Analog#A0>300 DO Backlog Var1 6; Rule2 Off; Rule3 Off ENDON ON Analog#A0<=300 DO Backlog Rule2 On; Rule3 Off; Var1 1 ENDON
 ```
 
-Var1 values are the same as above except that if high voltage (charging) is detected, it will be equal to 6. Otherwise, while charging, it will constantly keep re-activating the last part of Rule3, clogging up the console log. Despite being turned off, Rule3 may activate several times. In any case, it seems to work to keep Rule2 from activating and causing the latch to turn on.
+Var1 values are the same as above except that if high voltage (charging) is detected, it will be equal to 6 and the led will turn off (the TP4056 should have leds that indicate charging state).
 
-Some other caveats of using this circuit is that sometimes while charging, the latch is actually on so when unplugging the device, the LED remains on. You should be able to press the button to simply fully turn it off. Also, sometimes when pressing the button too soon after charging, the A0 pin will measure a higher voltage - which prevents the WebQuery from happening.
+Some other caveats of using this circuit is that sometimes while charging, the latch is actually on so when unplugging the device, the device remains on. You should be able to press the button to simply fully turn it off. Also, sometimes when pressing the button too soon after charging, the D1 will fail to boot. I'm not sure why that is.
 
-You may need to check the A0 output in a web browser. The number 300 in Rule3 worked for me but it may not work for you, especially if you use a different resistor.  The easiest way would be to plug it into a computer, see what the high end number is, click the button to activate the latch, wait until the RulesTimer expires (30s) then unplug it and wait a bit for A0 to level out, then choose a number about midway.
+You may need to check the A0 output in a web browser. The number 300 in Rule3 worked for me but it may not work for you, especially if you use a different resistor.  The easiest way would be to plug it into a computer, see what the high end number is, click the button to activate the latch, wait until the RulesTimer expires (30s) then unplug it and wait a bit for A0 to level out, then choose a number about midway (preferably with a fully-charged battery).
